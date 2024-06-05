@@ -3,6 +3,7 @@ import { UsersController } from '../users.controller';
 import { UsersService } from '../users.service';
 import { usersMock } from '../mocks/mocks';
 import { CPaginateDefault } from '../../constants';
+import { NotFoundException } from '@nestjs/common';
 
 describe('UsersController', () => {
   let usersController: UsersController;
@@ -15,7 +16,14 @@ describe('UsersController', () => {
         {
           provide: UsersService,
           useValue: {
+            /**
+             * Busca usuários
+             */
             findAll: jest.fn().mockResolvedValue(usersMock),
+            /**
+             * Busca usuário
+             */
+            findByUUID: jest.fn().mockResolvedValue(usersMock[0]),
           },
         },
       ],
@@ -35,10 +43,10 @@ describe('UsersController', () => {
     expect(usersService).toBeDefined();
   });
 
-  // Teste para método findAll do controlador de rotas de usuários
+  // Teste para método findAll
   describe('findAll', () => {
     it('should return un array of users', async () => {
-      // Chama o método findAll do controlador de rotas de usuários
+      // Chama o método findAll
       const result = await usersController.findAll('', CPaginateDefault);
 
       // Verifica se o resultado é igual ao Mock
@@ -46,11 +54,35 @@ describe('UsersController', () => {
     });
 
     it('should rejects with Error', async () => {
+      // Simula o retorno do método findAll do serviço de usuários
       jest.spyOn(usersService, 'findAll').mockRejectedValue(new Error());
       // Verifica se o método findAll retorna um erro
       await expect(
         usersController.findAll('', CPaginateDefault),
       ).rejects.toThrow(Error);
+    });
+
+    // Teste para método findByUUID
+    describe('findByUUID', () => {
+      it('should return un user', async () => {
+        // Chama o método findByUUID
+        const result = await usersController.findByUUID('uuid');
+
+        // Verifica se o resultado é igual ao Mock
+        expect(result).toEqual(usersMock[0]);
+      });
+
+      it('should rejects with NotFoundException', async () => {
+        // Simula o retorno do método findByUUID do serviço de usuários
+        jest
+          .spyOn(usersService, 'findByUUID')
+          .mockRejectedValue(new NotFoundException());
+
+        // Verifica se o método findByUUID retorna um NotFoundException
+        await expect(usersController.findByUUID('uuid')).rejects.toThrow(
+          NotFoundException,
+        );
+      });
     });
   });
 });

@@ -4,7 +4,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../../entitys/user.entity';
 import { Repository } from 'typeorm';
 import { usersMock } from '../mocks/mocks';
-import { CPaginateDefault } from 'src/constants';
+import { CPaginateDefault } from '../../constants';
+import { NotFoundException } from '@nestjs/common';
 
 describe('UsersService', () => {
   let usersService: UsersService;
@@ -22,13 +23,25 @@ describe('UsersService', () => {
              */
             find: jest.fn(),
             /**
+             * Mock de Buscar usuário
+             */
+            findOne: jest.fn().mockResolvedValue(usersMock[0]),
+            /**
              * Mock de construtor de Query
              */
             createQueryBuilder: jest.fn().mockReturnValue({
               /**
+               * Mock de parâmetro select de construtor de Query
+               */
+              select: jest.fn().mockReturnThis(),
+              /**
                * Mock de parâmetro where de construtor de Query
                */
               where: jest.fn().mockReturnThis(),
+              /**
+               * Mock de parâmetro orWhere de construtor de Query
+               */
+              orWhere: jest.fn().mockReturnThis(),
               /**
                * Mock de parâmetro ilike de construtor de Query
                */
@@ -80,7 +93,7 @@ describe('UsersService', () => {
     });
 
     it('should rejects with Error', async () => {
-      // Simula o retorno do método getMany do createQueryBuilder do repositório
+      // Simula o retorno do método getMany do createQueryBuilder do repositório de usuários
       jest
         .spyOn(usersRepository.createQueryBuilder(), 'getMany')
         .mockRejectedValue(new Error());
@@ -89,6 +102,27 @@ describe('UsersService', () => {
       await expect(
         usersService.findAll('search', CPaginateDefault),
       ).rejects.toThrow(Error);
+    });
+  });
+
+  // Teste para método findByUUID do serviço de usuários
+  describe('findByUUID', () => {
+    it('should return un user', async () => {
+      // Chama o método findAll do serviço de usuários
+      const result = await usersService.findByUUID('uuid');
+
+      // Verifica se o resultado é igual o Mock
+      expect(result).toEqual(usersMock[0]);
+    });
+
+    it('should rejects with NotFoundException', async () => {
+      // Simula o retorno do método findOne do repositório de usuários
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+
+      // Verifica se o método findByUUID retorna um NotFoundException
+      await expect(usersService.findByUUID('uuid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

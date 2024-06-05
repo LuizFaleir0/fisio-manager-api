@@ -21,10 +21,24 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect('Hello World!');
   });
-
-  describe('Users', () => {
-    it('/users (GET)', () => {
+  // Teste para endPoint de buscar usuários
+  describe('/users (GET)', () => {
+    it('should return status 200', async () => {
       return request(app.getHttpServer()).get('/users').expect(200);
+    });
+  });
+
+  // Teste para endPoint de buscar usuário por uuid
+  describe('/users/user (GET)', () => {
+    it('should return status 200', () => {
+      const uuid = 'e598d835-5f4c-42f3-85ba-2bfe21f6e777';
+      return request(app.getHttpServer())
+        .get(`/users/user?uuid=${uuid}`)
+        .expect(200);
+    });
+
+    it('should return status 400', () => {
+      return request(app.getHttpServer()).get('/users/user').expect(400);
     });
   });
 });
