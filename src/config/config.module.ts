@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { User } from '../entitys/user.entity';
+import { UsersMigration } from '../migrations/1717479839609-users';
 
 /**
  * Configurações de banco de dados
@@ -14,6 +16,9 @@ const getTypeOrmModuleOptions = (
   username: configService.get<string>('DB_USERNAME'),
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_NAME'),
+  entities: [User],
+  migrations: [UsersMigration],
+  synchronize: true,
 });
 
 /**
