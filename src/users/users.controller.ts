@@ -13,6 +13,7 @@ interface IUsersController {
     paginate: TPaginate,
     isActive: boolean,
   ): Promise<User[]>;
+  findByUUID(uuid: string): Promise<User>;
 }
 
 /**
@@ -24,7 +25,6 @@ export class UsersController implements IUsersController {
     @Inject(UsersService)
     private userService: IUsersService,
   ) {}
-
   /**
    * Buscar usuários
    * @param search Valor usado para buscar usuários
@@ -32,8 +32,8 @@ export class UsersController implements IUsersController {
    * @param isActive Declara o tipo de situação de usuários a serem buscados
    * @returns Uma promesa de um array de usuários
    */
-  @HttpCode(200)
   @Get()
+  @HttpCode(200)
   async findAll(
     @Query('search') search: string,
     @Query('paginate') paginate: TPaginate,
@@ -61,5 +61,16 @@ export class UsersController implements IUsersController {
       paginateDefault,
       isActive,
     );
+  }
+
+  /**
+   * Buscar usuário por uuid
+   * @param uuid uuid a ser utilizado
+   * @returns Uma promesa de um usuário
+   */
+  @Get('user')
+  @HttpCode(200)
+  async findByUUID(@Query('uuid') uuid: string): Promise<User> {
+    return await this.userService.findByUUID(uuid);
   }
 }
