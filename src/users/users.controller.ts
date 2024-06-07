@@ -1,8 +1,20 @@
-import { Controller, Get, HttpCode, Inject, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Post,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { IUsersService, UsersService } from './users.service';
 import { User } from '../entitys/user.entity';
 import { TPaginate } from '../interfaces';
 import { CPaginateDefault } from '../constants';
+import { CreateUserDto } from './dtos/create-user.dto';
 
 /**
  * Contrato de controlador de usuário
@@ -14,6 +26,7 @@ interface IUsersController {
     isActive: boolean,
   ): Promise<User[]>;
   findByUUID(uuid: string): Promise<User>;
+  create(createUserDto: CreateUserDto): Promise<Partial<User>>;
 }
 
 /**
@@ -33,7 +46,7 @@ export class UsersController implements IUsersController {
    * @returns Uma promesa de um array de usuários
    */
   @Get()
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   async findAll(
     @Query('search') search: string,
     @Query('paginate') paginate: TPaginate,
@@ -69,8 +82,15 @@ export class UsersController implements IUsersController {
    * @returns Uma promesa de um usuário
    */
   @Get('user')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   async findByUUID(@Query('uuid') uuid: string): Promise<User> {
     return await this.userService.findByUUID(uuid);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async create(@Body() createUserDto: CreateUserDto): Promise<Partial<User>> {
+    return await this.userService.create(createUserDto);
   }
 }

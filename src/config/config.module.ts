@@ -30,6 +30,7 @@ const getTypeOrmModuleOptions = (
     TypeOrmModule.forRootAsync({
       imports: [
         ConfigModule.forRoot({
+          isGlobal: true,
           // Configurando variáveis de ambiente
           envFilePath: ['.env.development.local'],
         }),

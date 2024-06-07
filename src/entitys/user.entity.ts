@@ -21,6 +21,12 @@ export class User {
   full_name: string;
 
   /**
+   * Nome de usuário
+   */
+  @Column()
+  user_name: string;
+
+  /**
    * Número de telefone do usuário
    */
   @Column({ nullable: true })

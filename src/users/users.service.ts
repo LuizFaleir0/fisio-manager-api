@@ -2,24 +2,28 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entitys/user.entity';
 import { TPaginate } from '../interfaces';
-import { FindOptionsSelect, FindOptionsWhere, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { CreateUserDto } from './dtos/create-user.dto';
+import { v4 } from 'uuid';
+import { selectUserDefault } from '../constants';
 
 /**
- * Select Padrão de Busca de Usuário
+ * Select Padrão de Usuário (QueryBuilder)
  */
-const selectUserDefault: FindOptionsSelect<User> = {
-  uuid: true,
-  full_name: true,
-  phone: true,
-  password: false,
-  is_active: true,
-  created_at: true,
-  updated_at: true,
-};
+const selectUserDefaultQueryBuilder: string[] = [
+  'user.uuid',
+  'user.full_name',
+  'user.user_name',
+  'user.phone',
+  'user.is_active',
+  'user.created_at',
+  'user.updated_at',
+];
 
 /**
  * Contrato de serviço de usuários.
@@ -33,6 +37,8 @@ export interface IUsersService {
   ): Promise<User[]>;
   // Retorna uma promesa de um usuário
   findByUUID(uuid: string): Promise<User>;
+  // Retorna uma promesa de um usuário
+  create(createUserDto: CreateUserDto): Promise<Partial<User>>;
 }
 
 /**
@@ -44,7 +50,6 @@ export class UsersService implements IUsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
   ) {}
-
   /**
    * Buscar Usuários
    * @param search Valor usado para buscar usuários
@@ -58,38 +63,26 @@ export class UsersService implements IUsersService {
     isActive?: boolean,
   ): Promise<User[]> {
     try {
-      // Define as opções de campos a serem buscados
-      const whereOptions: FindOptionsWhere<User> = {
-        full_name: `%${search}%`,
-        phone: `%${search}%`,
-      };
-
-      // Define quantas linhas devem ser ignoradas ao buscar os usuários
+      // Definindo quantas linhas devem ser ignoradas ao buscar os usuários
       const skip = (paginate.currentPage - 1) * paginate.limit;
 
-      // Verifica se o parâmetro de busca is_active deve ser usado
+      // Definindo construtor de consulta
+      const users = this.usersRepository
+        .createQueryBuilder('user')
+        .select(selectUserDefaultQueryBuilder)
+        .where('user.full_name ilike :search', { search: `%${search}%` })
+        .orWhere('user.user_name ilike :search', { search: `%${search}%` })
+        .orWhere('user.phone ilike :search', { search: `%${search}%` });
+
       if (isActive !== undefined) {
-        whereOptions.is_active = isActive;
+        users.andWhere('user.is_active = :active', { active: isActive });
       }
 
-      // Busca usuários paginados
-      const users = await this.usersRepository
-        .createQueryBuilder('user')
-        .select([
-          'user.uuid',
-          'user.full_name',
-          'user.phone',
-          'user.is_active',
-          'user.created_at',
-          'user.updated_at',
-        ])
-        .where('user.full_name ilike :search', { search: `%${search}%` })
-        .orWhere('user.phone ilike :search', { search: `%${search}%` })
-        .limit(paginate.limit)
-        .skip(skip)
-        .getMany();
+      // Definindo paginação
+      users.limit(paginate.limit).skip(skip);
 
-      return users;
+      // Busca usuários paginados
+      return await users.getMany();
     } catch (error) {
       throw error;
     }
@@ -114,11 +107,52 @@ export class UsersService implements IUsersService {
         select: selectUserDefault,
       });
 
+      // Verifica se algum usuário foi encontrado
       if (user === null) {
         throw new NotFoundException('Usuário não encontrado');
       }
 
       return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Cria novo usuário
+   * @param userCreate Dados do usuário
+   * @returns Uma promesa de um usuário
+   */
+  async create(userCreate: CreateUserDto): Promise<Partial<User>> {
+    try {
+      const existsUserWithUserName = await this.usersRepository.existsBy({
+        user_name: userCreate.user_name,
+      });
+
+      if (existsUserWithUserName) {
+        throw new UnprocessableEntityException(
+          'Já existe uma conta com esse nome de usuário!',
+        );
+      }
+      // Intanciando novo usuário
+      const user = new User();
+
+      // Definindo os dados
+      user.uuid = v4();
+      user.full_name = userCreate.full_name;
+      user.user_name = userCreate.user_name;
+      if (userCreate.phone !== undefined) {
+        user.phone = userCreate.phone;
+      }
+      user.password = userCreate.password;
+
+      // Salvando usuário no banco de dados
+      const savedUser = await this.usersRepository.save(user);
+
+      // Retirando a senha da resposta
+      delete savedUser.password;
+
+      return savedUser;
     } catch (error) {
       throw error;
     }
