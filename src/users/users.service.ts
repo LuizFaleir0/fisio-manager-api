@@ -39,6 +39,8 @@ export interface IUsersService {
   findByUUID(uuid: string): Promise<User>;
   // Retorna uma promesa de um usuário
   create(createUserDto: CreateUserDto): Promise<Partial<User>>;
+  // Retorna uma promesa de um boolean
+  delete(uuid: string): Promise<{ deleted: boolean }>;
 }
 
 /**
@@ -95,6 +97,7 @@ export class UsersService implements IUsersService {
    */
   async findByUUID(uuid: string): Promise<User> {
     try {
+      // Verifica se o parâmetro existe
       if (!uuid) {
         throw new BadRequestException('O parâmetro uuid é requerido!');
       }
@@ -123,10 +126,11 @@ export class UsersService implements IUsersService {
    * @param userCreate Dados do usuário
    * @returns Uma promesa de um usuário
    */
-  async create(userCreate: CreateUserDto): Promise<Partial<User>> {
+  async create(createUserDto: CreateUserDto): Promise<Partial<User>> {
     try {
+      // Verifica se o usuário existe no banco de dados
       const existsUserWithUserName = await this.usersRepository.existsBy({
-        user_name: userCreate.user_name,
+        user_name: createUserDto.user_name,
       });
 
       if (existsUserWithUserName) {
@@ -139,12 +143,12 @@ export class UsersService implements IUsersService {
 
       // Definindo os dados
       user.uuid = v4();
-      user.full_name = userCreate.full_name;
-      user.user_name = userCreate.user_name;
-      if (userCreate.phone !== undefined) {
-        user.phone = userCreate.phone;
+      user.full_name = createUserDto.full_name;
+      user.user_name = createUserDto.user_name;
+      if (createUserDto.phone !== undefined) {
+        user.phone = createUserDto.phone;
       }
-      user.password = userCreate.password;
+      user.password = createUserDto.password;
 
       // Salvando usuário no banco de dados
       const savedUser = await this.usersRepository.save(user);
@@ -153,6 +157,39 @@ export class UsersService implements IUsersService {
       delete savedUser.password;
 
       return savedUser;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Deleta usuário do banco de dados
+   * @param uuid uuid a ser usado
+   * @returns Uma promesa de um boolean
+   */
+  async delete(uuid: string): Promise<{ deleted: boolean }> {
+    try {
+      // Verifica se o parâmetro existe
+      if (!uuid) {
+        throw new BadRequestException('O parâmetro uuid é requerido!');
+      }
+      // Verifica se o usuário existe no banco de dados
+      const existsUserWithUUID = await this.usersRepository.existsBy({
+        uuid: uuid,
+      });
+
+      if (existsUserWithUUID === false) {
+        throw new NotFoundException('Usuário não encontrado!');
+      }
+
+      // Deleta o usuário do banco de dados
+      await this.usersRepository.delete({
+        uuid: uuid,
+      });
+
+      return {
+        deleted: true,
+      };
     } catch (error) {
       throw error;
     }

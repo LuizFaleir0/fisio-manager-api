@@ -34,21 +34,37 @@ describe('AppController (e2e)', () => {
   // Teste para endPoint de criar usuário
   describe('/users (POST)', () => {
     // Depende de testes de outros endPoints
-    it.skip('should return status 201', async () => {
+    it('should return status 201', async () => {
       const response = await request(app.getHttpServer())
         .post('/users')
         .send(createUserDtoMock);
 
+      const body: User = response.body;
+      userCreated = new User();
+      userCreated.uuid = body.uuid;
+      userCreated.full_name = body.full_name;
+      userCreated.user_name = body.user_name;
+      userCreated.phone = body.phone;
+      userCreated.is_active = body.is_active;
+      userCreated.created_at = body.created_at;
+      userCreated.updated_at = body.updated_at;
       expect(response.statusCode).toBe(HttpStatus.CREATED);
+    });
+
+    it('should return status 422', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users')
+        .send(createUserDtoMock);
+
+      expect(response.statusCode).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
     });
   });
 
   // Teste para endPoint de buscar usuário por uuid
   describe('/users/user (GET)', () => {
     it('should return status 200', () => {
-      const uuid = userCreated.uuid;
       return request(app.getHttpServer())
-        .get(`/users/user?uuid=${uuid}`)
+        .get(`/users/user?uuid=${userCreated.uuid}`)
         .expect(HttpStatus.OK);
     });
 
@@ -56,6 +72,17 @@ describe('AppController (e2e)', () => {
       return request(app.getHttpServer())
         .get('/users/user')
         .expect(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  // Teste para endPoint de deletar usuário
+  describe('/users (DELETE)', () => {
+    it('should return status 200', async () => {
+      const response = await request(app.getHttpServer()).delete(
+        `/users/user?uuid=${userCreated.uuid}`,
+      );
+
+      expect(response.statusCode).toBe(HttpStatus.OK);
     });
   });
 });

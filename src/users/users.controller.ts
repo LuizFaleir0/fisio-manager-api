@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -27,6 +28,7 @@ interface IUsersController {
   ): Promise<User[]>;
   findByUUID(uuid: string): Promise<User>;
   create(createUserDto: CreateUserDto): Promise<Partial<User>>;
+  delete(uuid: string): Promise<{ deleted: boolean }>;
 }
 
 /**
@@ -92,5 +94,11 @@ export class UsersController implements IUsersController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async create(@Body() createUserDto: CreateUserDto): Promise<Partial<User>> {
     return await this.userService.create(createUserDto);
+  }
+
+  @Delete('user')
+  @HttpCode(HttpStatus.OK)
+  async delete(@Query('uuid') uuid: string): Promise<{ deleted: boolean }> {
+    return await this.userService.delete(uuid);
   }
 }

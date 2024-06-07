@@ -24,17 +24,21 @@ describe('UsersController', () => {
           provide: UsersService,
           useValue: {
             /**
-             * Busca usuários
+             * Mock de Buscar usuários
              */
             findAll: jest.fn().mockResolvedValue(usersMock),
             /**
-             * Busca usuário
+             * Mock de Buscar usuário
              */
             findByUUID: jest.fn().mockResolvedValue(usersMock[0]),
             /**
-             * Cria um novo usuário
+             * mock de Criar um novo usuário
              */
             create: jest.fn().mockResolvedValue(createUserResponseMock),
+            /**
+             * Mock de Deletar um usuário
+             */
+            delete: jest.fn().mockResolvedValue({ deleted: true }),
           },
         },
       ],
@@ -114,6 +118,27 @@ describe('UsersController', () => {
       // Verificando se o método create retorna um UnprocessableEntityException
       await expect(usersController.create(createUserDtoMock)).rejects.toThrow(
         UnprocessableEntityException,
+      );
+    });
+  });
+
+  describe('delete', () => {
+    it('un object with true deleted property', async () => {
+      // Chama o método delete do controlador de rotas
+      const result = await usersController.delete('uuid');
+
+      // Verifica se o resultado é um objeto com a propriedade deleted true
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should rejects with NotFoundException', async () => {
+      // Simula o retorno do método delete do serviço de usuários
+      jest
+        .spyOn(usersService, 'delete')
+        .mockRejectedValue(new NotFoundException());
+      // Verifica se o método retorna NotFoundException
+      await expect(usersController.delete('uuid')).rejects.toThrow(
+        NotFoundException,
       );
     });
   });
