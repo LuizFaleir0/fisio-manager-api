@@ -5,6 +5,7 @@ import { AppModule } from './../src/app.module';
 import { User } from '../src/entitys/user.entity';
 import {
   createUserDtoMock,
+  createUserDtoMockTwo,
   updateUserDtoMock,
   updateUserNameMock,
 } from '../src/users/mocks/mocks';
@@ -14,6 +15,7 @@ import { UpdateUserNameDto } from 'src/users/dtos/update-user-name.dto';
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let userCreated: User;
+  let userCreatedTwo: User;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -45,18 +47,34 @@ describe('AppController (e2e)', () => {
         .post('/users')
         .send(createUserDtoMock);
 
+      const responseTwo = await request(app.getHttpServer())
+        .post('/users')
+        .send(createUserDtoMockTwo);
+
       // Body da resposta
       const body: User = response.body;
+      const bodyTwo: User = responseTwo.body;
 
       // Salva o usuário criado
       userCreated = new User();
       userCreated.uuid = body.uuid;
       userCreated.full_name = body.full_name;
+      console.log('POST', body);
       userCreated.user_name = body.user_name;
       userCreated.phone = body.phone;
       userCreated.is_active = body.is_active;
       userCreated.created_at = body.created_at;
       userCreated.updated_at = body.updated_at;
+
+      // Salva o segundo usuário criado
+      userCreatedTwo = new User();
+      userCreatedTwo.uuid = bodyTwo.uuid;
+      userCreatedTwo.full_name = bodyTwo.full_name;
+      userCreatedTwo.user_name = bodyTwo.user_name;
+      userCreatedTwo.phone = bodyTwo.phone;
+      userCreatedTwo.is_active = bodyTwo.is_active;
+      userCreatedTwo.created_at = bodyTwo.created_at;
+      userCreatedTwo.updated_at = bodyTwo.updated_at;
 
       // Verifica se o status recebido é 201
       expect(response.statusCode).toBe(HttpStatus.CREATED);
@@ -149,19 +167,21 @@ describe('AppController (e2e)', () => {
         .patch('/users/user_name')
         .send(body);
 
-      console.log(response.body);
+      const responseBody: UpdateUserNameDto = response.body;
+
+      userCreated.user_name = responseBody.user_name;
 
       // Verifica se o status recebido é 200
       expect(response.statusCode).toBe(HttpStatus.OK);
     });
 
     it('should return status 404', async () => {
-      const body: UpdateUserDto = {
+      const body: UpdateUserNameDto = {
         uuid: 'uuid',
-        user: updateUserDtoMock.user,
+        user_name: updateUserNameMock.user_name,
       };
       const response = await request(app.getHttpServer())
-        .put('/users/user')
+        .patch('/users/user_name')
         .send(body);
 
       // Verifica se o status recebido é 404
@@ -169,26 +189,61 @@ describe('AppController (e2e)', () => {
     });
 
     it('should return status 400', async () => {
-      // Body com uuid e sem dados do usuário
-      const bodyWithoutUserData: Partial<UpdateUserDto> = {
+      // Body com uuid e sem o nome de usuário
+      const bodyWithoutUserName: Partial<UpdateUserDto> = {
         uuid: userCreated.uuid,
       };
 
-      // Body com dados do usuário e sem uuid
-      const bodyWithoutUUID: Partial<UpdateUserDto> = {
-        user: userCreated,
+      // Body com o nome de usuário e sem uuid
+      const bodyWithoutUUID: Partial<UpdateUserNameDto> = {
+        user_name: updateUserNameMock.user_name,
       };
       const responseWithoutUserData = await request(app.getHttpServer())
-        .put('/users/user')
-        .send(bodyWithoutUserData);
+        .patch('/users/user_name')
+        .send(bodyWithoutUserName);
 
       const responseWithoutUUID = await request(app.getHttpServer())
-        .put('/users/user')
+        .patch('/users/user_name')
         .send(bodyWithoutUUID);
 
       // Verifica se o status de cada requisição recebido é 400
       expect(responseWithoutUserData.statusCode).toBe(HttpStatus.BAD_REQUEST);
       expect(responseWithoutUUID.statusCode).toBe(HttpStatus.BAD_REQUEST);
+    });
+
+    describe('should return status 422', () => {
+      it('There is an account with the same username', async () => {
+        // Body com uuid do userCreated e o nome de usuário do userCreatedTwo
+        const body: Partial<UpdateUserNameDto> = {
+          uuid: userCreated.uuid,
+          user_name: userCreatedTwo.user_name,
+        };
+
+        const response = await request(app.getHttpServer())
+          .patch('/users/user_name')
+          .send(body);
+
+        console.log(response.body);
+        // Verifica se o status de cada requisição recebido é 422
+        expect(response.statusCode).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      });
+
+      it('The account already uses this username', async () => {
+        // Body com uuid e o nome de usuário do userCreated
+        const body: Partial<UpdateUserNameDto> = {
+          uuid: userCreated.uuid,
+          user_name: userCreated.user_name,
+        };
+
+        const response = await request(app.getHttpServer())
+          .patch('/users/user_name')
+          .send(body);
+
+        console.log(response.body);
+
+        // Verifica se o status de cada requisição recebido é 422
+        expect(response.statusCode).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      });
     });
   });
 

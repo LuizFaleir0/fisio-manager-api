@@ -21,6 +21,17 @@ export const createUserDtoMock: CreateUserDto = {
 };
 
 /**
+ * Segundo mock de criação de usuário (Dto)
+ */
+export const createUserDtoMockTwo: CreateUserDto = {
+  full_name: 'nome completo 2',
+  user_name: 'nome de usuario two',
+  phone: 'telefone 2',
+  password: 'senha 2',
+  password_confirmation: 'senha 2',
+};
+
+/**
  * Mock de atualização de usuário (Dto)
  */
 export const updateUserDtoMock: UpdateUserDto = {
