@@ -12,6 +12,7 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { v4 } from 'uuid';
 import { selectUserDefault } from '../constants';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateUserNameDto } from './dtos/update-user-name.dto';
 
 /**
  * Select Padrão de Usuário (QueryBuilder)
@@ -30,19 +31,33 @@ const selectUserDefaultQueryBuilder: string[] = [
  * Contrato de serviço de usuários.
  */
 export interface IUsersService {
-  // Retorna uma promesa de um array usuários
+  /**
+   * Retorna uma promesa de um array de usuários
+   */
   findAll(
     search: string,
     paginate: TPaginate,
     isActive?: boolean,
   ): Promise<User[]>;
-  // Retorna uma promesa de um usuário
+  /**
+   * Retorna uma promesa de um usuário
+   */
   findByUUID(uuid: string): Promise<User>;
-  // Retorna uma promesa de um usuário
+  /**
+   * Retorna uma promesa de um usuário
+   */
   create(createUserDto: CreateUserDto): Promise<Partial<User>>;
-  // Retorna uma promesa de um usuário
+  /**
+   * Retorna uma promesa de um usuário
+   */
   update(updateUserDto: UpdateUserDto): Promise<Partial<User>>;
-  // Retorna uma promesa de um boolean
+  /**
+   * Retorna uma promesa de um usuário
+   */
+  changeUserName(updateUserNameDto: UpdateUserNameDto): Promise<Partial<User>>;
+  /**
+   * Retorna uma promesa de um boolean
+   */
   delete(uuid: string): Promise<{ deleted: boolean }>;
 }
 
@@ -191,6 +206,48 @@ export class UsersService implements IUsersService {
 
       // Retira a senha da resposta
       delete userUpdated.password;
+      return userUpdated;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async changeUserName(
+    updateUserNameDto: UpdateUserNameDto,
+  ): Promise<Partial<User>> {
+    try {
+      // Verifica se o usuário existe no banco de dados
+      const user = await this.usersRepository.findOne({
+        where: {
+          uuid: updateUserNameDto.uuid,
+        },
+      });
+
+      if (user === null) {
+        throw new NotFoundException('Usuário não encontrado!');
+      }
+
+      // Verifica se já existe uma conta com o mesmo nome de usuário
+      const existsUserWithUserName = await this.usersRepository.findOneBy({
+        user_name: updateUserNameDto.user_name,
+      });
+
+      if (existsUserWithUserName !== null) {
+        if (existsUserWithUserName.uuid === updateUserNameDto.uuid) {
+          throw new UnprocessableEntityException(
+            'Você já está utilizando esse nome de usuário!',
+          );
+        } else {
+          throw new UnprocessableEntityException(
+            'Já existe uma conta com esse nome de usuário!',
+          );
+        }
+      }
+
+      // Atualiza o Nome de Usuário
+      user.user_name = updateUserNameDto.user_name;
+      const userUpdated = await this.usersRepository.save(user);
+
       return userUpdated;
     } catch (error) {
       throw error;

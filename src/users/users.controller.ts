@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Patch,
   Post,
   Put,
   Query,
@@ -18,19 +19,39 @@ import { TPaginate } from '../interfaces';
 import { CPaginateDefault } from '../constants';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateUserNameDto } from './dtos/update-user-name.dto';
 
 /**
  * Contrato de controlador de usuário
  */
 interface IUsersController {
+  /**
+   * Retorna uma Promesa de um array de usuários
+   */
   findAll(
     search: string,
     paginate: TPaginate,
     isActive: boolean,
   ): Promise<User[]>;
+  /**
+   * Retorna uma promesa de um usuário
+   */
   findByUUID(uuid: string): Promise<User>;
+  /**
+   * Retorna uma promesa de um usuário
+   */
   create(createUserDto: CreateUserDto): Promise<Partial<User>>;
-  update(updatedUserDto: UpdateUserDto): Promise<Partial<User>>;
+  /**
+   * Retorna uma promesa de um usuário
+   */
+  update(updateUserDto: UpdateUserDto): Promise<Partial<User>>;
+  /**
+   * Retorna uma promesa de um usuário
+   */
+  changeUserName(updateUserNameDto: UpdateUserNameDto): Promise<Partial<User>>;
+  /**
+   * Retorna uma promesa de objeto
+   */
   delete(uuid: string): Promise<{ deleted: boolean }>;
 }
 
@@ -92,6 +113,11 @@ export class UsersController implements IUsersController {
     return await this.userService.findByUUID(uuid);
   }
 
+  /**
+   * Cria um novo usuário
+   * @param createUserDto usuário a ser criado
+   * @returns Uma promesa de um usuário
+   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -99,6 +125,11 @@ export class UsersController implements IUsersController {
     return await this.userService.create(createUserDto);
   }
 
+  /**
+   * Atualiza dados gerais de um usuário
+   * @param updateUserDto uuid e dados de usuário a serem atualizados
+   * @returns Uma promesa de um usuário
+   */
   @Put('user')
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -106,6 +137,25 @@ export class UsersController implements IUsersController {
     return await this.userService.update(updateUserDto);
   }
 
+  /**
+   * Atualiza nome de usuário de uma conta
+   * @param updateUserNameDto Nome de usuário a ser atualizado
+   * @returns Uma promesa de um usuário
+   */
+  @Patch('user_name')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async changeUserName(
+    @Body() updateUserNameDto: UpdateUserNameDto,
+  ): Promise<Partial<User>> {
+    return await this.userService.changeUserName(updateUserNameDto);
+  }
+
+  /**
+   * Deleta um usuário
+   * @param uuid identificador do usuário
+   * @returns Uma promesa de um objeto de confirmação com a propriedade deleted
+   */
   @Delete('user')
   @HttpCode(HttpStatus.OK)
   async delete(@Query('uuid') uuid: string): Promise<{ deleted: boolean }> {

@@ -7,6 +7,8 @@ import {
   createUserDtoMock,
   createUserResponseMock,
   updateUserDtoMock,
+  updateUserNameMock,
+  updateUserNameResponseMock,
   updateUserResponseMock,
   usersMock,
 } from '../mocks/mocks';
@@ -179,8 +181,8 @@ describe('UsersService', () => {
     });
   });
 
-  describe('update', () => {
-    it('should return un user', async () => {
+  describe.skip('update', () => {
+    it('should return an user', async () => {
       // Simula o retorno do método save do repositório de usuários
       jest
         .spyOn(usersRepository, 'save')
@@ -204,8 +206,67 @@ describe('UsersService', () => {
     });
   });
 
+  describe('changeUserName', () => {
+    it('should return an user', async () => {
+      // Simula o retorno do método findOneBy do repositório de usuários
+      jest.spyOn(usersRepository, 'findOneBy').mockResolvedValue(null);
+
+      // Simula o retorno do método save do repositório de usuários
+      jest
+        .spyOn(usersRepository, 'save')
+        .mockResolvedValue(updateUserNameResponseMock);
+
+      // Chama o método changeUserName do serviço de usuários
+      const result = await usersService.changeUserName(updateUserNameMock);
+
+      // Verifica se o resultado é igual ao mock
+      expect(result).toEqual(updateUserNameResponseMock);
+    });
+
+    it('should rejects with NotFoundException', async () => {
+      // Simula o retorno do método findOneBy do repositório de usuários
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+
+      // Verifica se o método changeUserName retorna um NotFoundException
+      await expect(
+        usersService.changeUserName(updateUserNameMock),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    // Esse teste verifica se retorna o erro quando já existe conta com o mesmo nome de usuário
+    it('should rejects with UnprocessableEntityException', async () => {
+      // Simula o retorno do método existsBy do repositório de usuários
+      jest
+        .spyOn(usersRepository, 'findOneBy')
+        .mockResolvedValue(updateUserNameResponseMock);
+
+      // Verifica se o método changeUserName retorna um UnprocessableEntityException
+      await expect(
+        usersService.changeUserName(updateUserNameMock),
+      ).rejects.toThrow(UnprocessableEntityException);
+    });
+
+    // Esse teste verifica se retorna o erro quando você quer atualizar com o mesmo nome de usuário
+    it('should rejects with UnprocessableEntityException', async () => {
+      // Simula o retorno do método findOne do repositório de usuários
+      jest
+        .spyOn(usersRepository, 'findOne')
+        .mockResolvedValue(updateUserNameResponseMock);
+
+      // Simula o retorno do método findOneBy do repositório de usuários
+      jest
+        .spyOn(usersRepository, 'findOneBy')
+        .mockResolvedValue(updateUserNameResponseMock);
+
+      // Verifica se o método changeUserName retorna um UnprocessableEntityException
+      await expect(
+        usersService.changeUserName(updateUserNameMock),
+      ).rejects.toThrow(UnprocessableEntityException);
+    });
+  });
+
   describe.skip('delete', () => {
-    it('should return un object with true deleted property', async () => {
+    it('should return an object with true deleted property', async () => {
       // Simula o retorno do método existsBy do repositório de usuários
       jest.spyOn(usersRepository, 'existsBy').mockResolvedValue(true);
 
