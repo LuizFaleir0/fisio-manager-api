@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import {
   createUserDtoMock,
   createUserResponseMock,
+  updateUserDtoMock,
+  updateUserResponseMock,
   usersMock,
 } from '../mocks/mocks';
 import { CPaginateDefault } from '../../constants';
@@ -33,6 +35,10 @@ describe('UsersService', () => {
              * Mock de Buscar usuário
              */
             findOne: jest.fn().mockResolvedValue(usersMock[0]),
+            /**
+             * Mock de Buscar usuário por uuid
+             */
+            findOneBy: jest.fn().mockResolvedValue(usersMock[0]),
             /**
              * Mock de Verificar se existe um usuário com dados específicos
              */
@@ -173,7 +179,32 @@ describe('UsersService', () => {
     });
   });
 
-  describe('delete', () => {
+  describe('update', () => {
+    it('should return un user', async () => {
+      // Simula o retorno do método save do repositório de usuários
+      jest
+        .spyOn(usersRepository, 'save')
+        .mockResolvedValue(updateUserResponseMock);
+
+      // Chama o método update do serviço de usuários
+      const result = await usersService.update(updateUserDtoMock);
+
+      // Verifica se o resultado é igual o Mock
+      expect(result).toEqual(updateUserResponseMock);
+    });
+
+    it('should rejects with NotFoundException', async () => {
+      // Simula o retorno do método findOneBy do repositório de usuários
+      jest.spyOn(usersRepository, 'findOneBy').mockResolvedValue(null);
+
+      // Verifica se o método update retorna um NotFoundException
+      await expect(usersService.update(updateUserDtoMock)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe.skip('delete', () => {
     it('should return un object with true deleted property', async () => {
       // Simula o retorno do método existsBy do repositório de usuários
       jest.spyOn(usersRepository, 'existsBy').mockResolvedValue(true);

@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Post,
+  Put,
   Query,
   UsePipes,
   ValidationPipe,
@@ -16,6 +17,7 @@ import { User } from '../entitys/user.entity';
 import { TPaginate } from '../interfaces';
 import { CPaginateDefault } from '../constants';
 import { CreateUserDto } from './dtos/create-user.dto';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 /**
  * Contrato de controlador de usuário
@@ -28,6 +30,7 @@ interface IUsersController {
   ): Promise<User[]>;
   findByUUID(uuid: string): Promise<User>;
   create(createUserDto: CreateUserDto): Promise<Partial<User>>;
+  update(updatedUserDto: UpdateUserDto): Promise<Partial<User>>;
   delete(uuid: string): Promise<{ deleted: boolean }>;
 }
 
@@ -94,6 +97,13 @@ export class UsersController implements IUsersController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async create(@Body() createUserDto: CreateUserDto): Promise<Partial<User>> {
     return await this.userService.create(createUserDto);
+  }
+
+  @Put('user')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async update(@Body() updateUserDto: UpdateUserDto): Promise<Partial<User>> {
+    return await this.userService.update(updateUserDto);
   }
 
   @Delete('user')

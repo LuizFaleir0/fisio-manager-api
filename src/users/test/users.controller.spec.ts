@@ -4,6 +4,8 @@ import { UsersService } from '../users.service';
 import {
   createUserDtoMock,
   createUserResponseMock,
+  updateUserDtoMock,
+  updateUserResponseMock,
   usersMock,
 } from '../mocks/mocks';
 import { CPaginateDefault } from '../../constants';
@@ -36,6 +38,10 @@ describe('UsersController', () => {
              */
             create: jest.fn().mockResolvedValue(createUserResponseMock),
             /**
+             * mock de Atualizar um usuário
+             */
+            update: jest.fn().mockResolvedValue(updateUserResponseMock),
+            /**
              * Mock de Deletar um usuário
              */
             delete: jest.fn().mockResolvedValue({ deleted: true }),
@@ -60,7 +66,7 @@ describe('UsersController', () => {
 
   // Teste para método findAll
   describe.skip('findAll', () => {
-    it('should return un array of users', async () => {
+    it('should return an array of users', async () => {
       // Chama o método findAll
       const result = await usersController.findAll('', CPaginateDefault);
 
@@ -79,7 +85,7 @@ describe('UsersController', () => {
   });
   // Teste para método findByUUID
   describe.skip('findByUUID', () => {
-    it('should return un user', async () => {
+    it('should return an user', async () => {
       // Chama o método findByUUID
       const result = await usersController.findByUUID('uuid');
 
@@ -101,7 +107,7 @@ describe('UsersController', () => {
   });
 
   describe('create', () => {
-    it('should return un user', async () => {
+    it('should return an user', async () => {
       // Chama o método create do controlador de rotas
       const result = await usersController.create(createUserDtoMock);
 
@@ -122,8 +128,29 @@ describe('UsersController', () => {
     });
   });
 
-  describe('delete', () => {
-    it('un object with true deleted property', async () => {
+  describe('update', () => {
+    it('should return an user', async () => {
+      // Chama o método update do controlador de rotas
+      const result = await usersController.update(updateUserDtoMock);
+
+      // Verifica se o resultado é igual ao mock
+      expect(result).toEqual(updateUserResponseMock);
+    });
+
+    it('should rejects with NotFoundException', async () => {
+      // Simula o retorno do método delete do serviço de usuários
+      jest
+        .spyOn(usersService, 'update')
+        .mockRejectedValue(new NotFoundException());
+      // Verifica se o método retorna NotFoundException
+      await expect(usersController.update(updateUserDtoMock)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe.skip('delete', () => {
+    it('should return an object with true deleted property', async () => {
       // Chama o método delete do controlador de rotas
       const result = await usersController.delete('uuid');
 

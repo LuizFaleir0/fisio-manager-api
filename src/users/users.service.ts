@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { v4 } from 'uuid';
 import { selectUserDefault } from '../constants';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 /**
  * Select Padrão de Usuário (QueryBuilder)
@@ -39,6 +40,8 @@ export interface IUsersService {
   findByUUID(uuid: string): Promise<User>;
   // Retorna uma promesa de um usuário
   create(createUserDto: CreateUserDto): Promise<Partial<User>>;
+  // Retorna uma promesa de um usuário
+  update(updateUserDto: UpdateUserDto): Promise<Partial<User>>;
   // Retorna uma promesa de um boolean
   delete(uuid: string): Promise<{ deleted: boolean }>;
 }
@@ -157,6 +160,38 @@ export class UsersService implements IUsersService {
       delete savedUser.password;
 
       return savedUser;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async update(updateUserDto: UpdateUserDto) {
+    try {
+      // Verifica se o usuário existe no banco de dados
+      const user = await this.usersRepository.findOneBy({
+        uuid: updateUserDto.uuid,
+      });
+
+      if (user === null) {
+        throw new NotFoundException('Usuário não encontrado!');
+      }
+
+      // Verifica se o nome completo vai ser alterado
+      if (updateUserDto.user.full_name) {
+        user.full_name = updateUserDto.user.full_name;
+      }
+
+      // Verifica se o telefone vai ser alterado
+      if (updateUserDto.user.phone) {
+        user.phone = updateUserDto.user.phone;
+      }
+
+      // Atualiza dados do usuário
+      const userUpdated = await this.usersRepository.save(user);
+
+      // Retira a senha da resposta
+      delete userUpdated.password;
+      return userUpdated;
     } catch (error) {
       throw error;
     }
